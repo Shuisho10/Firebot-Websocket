@@ -7,34 +7,45 @@ const wsl = require('ws');
 let wss: any;
 let actives: Set<any> = new Set();
 let em: ScriptModules["eventManager"];
-let ip,port;
+let ip: string, port: number;
 
-export function initWebsocket({
+export function setWSSettings({
     wsIpAddress,
     wsPort,
     eventManager
 }: {
-    wsIpAddress?: string;
-    wsPort?: number;
+    wsIpAddress: string;
+    wsPort: number;
     eventManager?: ScriptModules["eventManager"];
 }) {
-    wss = new wsl.WebSocketServer({ port: wsPort, host: wsIpAddress });
-    if (eventManager) {
+    ip = wsIpAddress;
+    port = wsPort;
+    if (eventManager)
         em = eventManager;
+}
+
+
+export function initWebsocket() {
+    if (wss) {
+        logger.info('WebSocket server is already running!');
     }
-    if (wsIpAddress){
-        ip = wsIpAddress;
-    }
-    if (wsPort){
-        port = wsPort;
+    else {
+        runWebsocket()
     }
 
+}
+
+function runWebsocket() {
+    wss = new wsl.WebSocketServer({ port: port, host: ip });
     em.triggerEvent("ws", "server-on", {});
 
     wss.on('listening', () => {
-        logger.info('WebSocket server is listening on ' + wsIpAddress + ':' + wsPort + '!');
+        logger.info('WebSocket server is listening on ' + ip + ':' + port + '!');
     });
-
+    wss.on('close', () => {
+        logger.info('WebSocket server is closed!');
+        wss = null;
+    });
     wss.on('connection', function connection(ws: any) {
         const clientAddress = ws._socket.remoteAddress;
         const clientPort = ws._socket.remotePort;
@@ -59,9 +70,9 @@ export function initWebsocket({
         ws.on('message', function message(data: any) {
             logger.info(`Data received from websocket: ${data}`);
             const translated: string = data.toString();
-            em.triggerEvent("ws", "received-message", {message: translated??""});
+            em.triggerEvent("ws", "received-message", { message: translated ?? "" });
         });
-      });
+    });
 }
 
 export function getWebsocketCount() {
@@ -74,23 +85,20 @@ export function getWebsocketCount() {
 
 export function toggleWebsocket() {
     if (wss) {
-            closeWebsocket();
-        } else {
-            initWebsocket({});
-        }
-}
-
-export function checkWebsocket() {
-    if (!wss && em) {
-        initWebsocket({});
+        closeWebsocket();
+    } else {
+        initWebsocket();
     }
 }
 
 export function closeWebsocket() {
-    if(wss) {
+    if (wss) {
         em.triggerEvent("ws", "server-off", {});
         wss.close();
         actives.clear();
+    }
+    else {
+        logger.info('WebSocket server is not running!');
     }
 }
 
@@ -103,7 +111,7 @@ function unregisterWebSocket(ws: any) {
     actives.delete(ws);
     em.triggerEvent("ws", "disconnected", {});
 }
-export function sendMessage({message}: {message: string}) {
+export function sendMessage({ message }: { message: string }) {
     for (let ws of actives) {
         ws.send(message);
     }

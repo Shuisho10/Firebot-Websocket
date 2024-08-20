@@ -1,6 +1,6 @@
 import { Firebot } from "@crowbartools/firebot-custom-scripts-types";
 import { initLogger } from "./logger";
-import { closeWebsocket, initWebsocket } from "./firebot/websocket-manager";
+import { closeWebsocket, initWebsocket, setWSSettings } from "./firebot/websocket-manager";
 import { WebsocketEvents } from "./firebot/events/websocket-events";
 import { SendMessage } from "./firebot/effects/websocket-send";
 import { WebsocketMessage } from "./firebot/variables/websocket-message";
@@ -44,19 +44,20 @@ const script: Firebot.CustomScript<Params> = {
     replaceVariableManager.registerReplaceVariable(WebsocketMessage)
     replaceVariableManager.registerReplaceVariable(WebsocketUserCount)
     initLogger(logger);
-    initWebsocket({
+    setWSSettings({
       wsIpAddress: runRequest.parameters.wsIpAddress,
       wsPort: runRequest.parameters.wsPort,
       eventManager: eventManager
     });
-    
+    initWebsocket();
   },
   parametersUpdated: (parameters) => {
     closeWebsocket();
-    initWebsocket({
+    setWSSettings({
       wsIpAddress: parameters.wsIpAddress,
       wsPort: parameters.wsPort
     });
+    initWebsocket();
   }
 };
 

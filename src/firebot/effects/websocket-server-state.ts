@@ -1,5 +1,6 @@
 import { Firebot } from "@crowbartools/firebot-custom-scripts-types";
-import { checkWebsocket, closeWebsocket, toggleWebsocket } from "../websocket-manager";
+import { closeWebsocket, initWebsocket, toggleWebsocket } from "../websocket-manager";
+import { logger } from "../../logger";
 
 type Params = {
     state: string;
@@ -7,9 +8,9 @@ type Params = {
 
 export const WebsocketServerState: Firebot.EffectType<Params> = {
     definition:{
-        id: "ws:send-message",
-        name: "Send Message to Websocket",
-        description: "Send a message to all users connected to the websocket.",
+        id: "ws:state",
+        name: "Set Websocket State",
+        description: "Sets the state of the websocket server.",
         icon: "fad fa-paper-plane",
         categories: ["common","integrations","advanced","scripting"]
     },
@@ -21,7 +22,7 @@ export const WebsocketServerState: Firebot.EffectType<Params> = {
     onTriggerEvent: async event => {
         switch(event.effect.state) {
             case "on":
-                checkWebsocket();
+                initWebsocket();
                 break;
             case "off":
                 closeWebsocket();
