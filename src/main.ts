@@ -10,6 +10,7 @@ import { WebsocketServerState } from "./firebot/effects/websocket-server-state";
 interface Params {
   wsIpAddress: string;
   wsPort: number;
+  onStart: boolean;
 }
 
 const script: Firebot.CustomScript<Params> = {
@@ -33,6 +34,11 @@ const script: Firebot.CustomScript<Params> = {
         type: "number",
         description: "Websocket's Port",
         default: 9005
+      },
+      onStart: {
+        type: "boolean",
+        description: "Start the websocket server on script start",
+        default: true
       }
     };
   },
@@ -49,7 +55,9 @@ const script: Firebot.CustomScript<Params> = {
       wsPort: runRequest.parameters.wsPort,
       eventManager: eventManager
     });
-    initWebsocket();
+    if (runRequest.parameters.onStart) {
+      initWebsocket();
+    }
   },
   parametersUpdated: (parameters) => {
     closeWebsocket();
